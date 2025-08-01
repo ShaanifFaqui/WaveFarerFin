@@ -1,0 +1,27 @@
+# WaveFarer Environment Configuration
+# Copy this file to .env and fill in your actual values
+
+# Database Configuration
+MONGODB_URI=mongodb://localhost:27017/
+# For production, use: mongodb+srv://username:password@cluster.mongodb.net/database
+
+# Flask Configuration
+FLASK_ENV=development
+FLASK_DEBUG=True
+FLASK_SECRET_KEY=your-secret-key-here
+
+# API Configuration
+PORT=5001
+HOST=0.0.0.0
+
+# External API Keys (if needed)
+# OPENWEATHER_API_KEY=your-openweather-api-key
+# MARINE_API_KEY=your-marine-api-key
+
+# Model Configuration
+MODEL_PATH=models/weather_forecast_model_v2.pth
+ALERT_MODEL_PATH=alert_model.pkl
+
+# Logging Configuration
+LOG_LEVEL=INFO
+LOG_FILE=wavefarer.log 

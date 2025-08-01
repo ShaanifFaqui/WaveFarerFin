@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import '../App.css'; 
-import axios from 'axios';
+import apiService from '../config/api';
+import { errorHandler } from '../utils/errorHandler';
 
 const ChangeMapView = ({ coords }) => {
   const map = useMap();
@@ -50,18 +51,16 @@ const Home = () => {
         setLat(lat);
         setLon(lon);
 
-        const marineURL = `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}&current=wave_height,ocean_current_velocity,sea_surface_temperature`;
-        const weatherURL = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,cloud_cover,weather_code`;
-
         const [marineRes, weatherRes] = await Promise.all([
-          axios.get(marineURL),
-          axios.get(weatherURL),
+          apiService.getMarineData(lat, lon),
+          apiService.getWeatherData(lat, lon),
         ]);
 
-        setSeaData(marineRes.data.current);
-        setWeatherData(weatherRes.data.current);
+        setSeaData(marineRes.current);
+        setWeatherData(weatherRes.current);
       } catch (error) {
-        console.error('Failed to fetch marine or weather data:', error);
+        errorHandler.logError(error, { context: 'fetch_weather_data', lat, lon });
+        errorHandler.showError(error);
         setSeaData(null);
         setWeatherData(null);
       }
@@ -74,11 +73,9 @@ const Home = () => {
   const handleSearch = async () => {
     
     try {
-      const response = await axios.get(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`
-      );
-      if (response.data.length > 0) {
-        const { lat, lon } = response.data[0];
+      const response = await apiService.geocodeLocation(address);
+      if (response.length > 0) {
+        const { lat, lon } = response[0];
         const newPos = [parseFloat(lat), parseFloat(lon)];
         setPosition(newPos);
         setTimeout(async () => {
@@ -102,10 +99,17 @@ const Home = () => {
             };
 
             try {
-              const predictRes = await axios.post('http://127.0.0.1:5001/api/predict', payload);
-              const { alert_message,safety_message } = predictRes.data;
+              const predictRes = await apiService.makePrediction(payload);
+              const { alert_message, safety_message } = predictRes;
               setSafetyMessage(safety_message);
               setAlertMessage(alert_message);
+              errorHandler.showSuccess('Safety prediction updated successfully');
+            } catch (error) {
+              errorHandler.logError(error, { context: 'prediction_api', payload });
+              errorHandler.showError(error);
+              setSafetyMessage('Unable to get safety prediction. Please try again.');
+              setAlertMessage('Service temporarily unavailable.');
+            }
               setPopupContent({
                 sea: {
                   title: 'Current Sea Conditions',
@@ -125,17 +129,17 @@ const Home = () => {
                 }
               });
             } catch (error) {
-              console.error('Prediction API error:', error);
-              alert('Failed to fetch safety prediction');
+              errorHandler.logError(error, { context: 'prediction_api', payload });
+              errorHandler.showError(error);
             }
           }
         }, 2000); 
       } else {
-        alert('Location not found');
+        errorHandler.showError(new Error('Location not found. Please try a different search term.'));
       }
     } catch (error) {
-      console.error('Geocoding error:', error);
-      alert('Failed to search for location');
+      errorHandler.logError(error, { context: 'geocoding', address });
+      errorHandler.showError(error);
     }
   };
   
@@ -146,24 +150,15 @@ const Home = () => {
   const closeFuture = () => setFuturePrediction(false);
   const openFuturePrediction = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:5001/api/future-predict", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          lat: lat,   
-          lon: lon
-        })
-      });
-  
-      const data = await response.json();
+      const data = await apiService.getForecast(lat, lon);
       console.log("Forecast:", data);
       setFutureData(data.forecast);
+      errorHandler.showSuccess('Future forecast loaded successfully');
   
       setFuturePrediction(true);
     } catch (error) {
-      console.error("Error fetching prediction:", error);
+      errorHandler.logError(error, { context: 'future_prediction', lat, lon });
+      errorHandler.showError(error);
     }
   };
   

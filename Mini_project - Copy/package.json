@@ -1,5 +1,36 @@
 {
+  "name": "wavefarer-microservices",
+  "version": "1.0.0",
+  "description": "WaveFarer Beach Safety Prediction System - Microservices Architecture",
+  "scripts": {
+    "start": "node start-services.js start",
+    "stop": "node start-services.js stop",
+    "restart": "node start-services.js restart",
+    "status": "node start-services.js status",
+    "dev": "node start-services.js start",
+    "install-deps": "npm run install-python-deps && npm run install-node-deps",
+    "install-python-deps": "pip install -r requirements.txt",
+    "install-node-deps": "cd backend && npm install",
+    "install-frontend-deps": "cd frontend && npm install",
+    "setup": "npm run install-deps && npm run install-frontend-deps"
+  },
   "dependencies": {
     "pandas": "^0.0.3"
-  }
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=14.0.0",
+    "python": ">=3.8"
+  },
+  "keywords": [
+    "microservices",
+    "flask",
+    "express",
+    "react",
+    "machine-learning",
+    "weather",
+    "beach-safety"
+  ],
+  "author": "WaveFarer Team",
+  "license": "MIT"
 }
